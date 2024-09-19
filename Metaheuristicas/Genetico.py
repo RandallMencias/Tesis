@@ -1,0 +1,83 @@
+import numpy as np
+from sklearn.feature_selection import mutual_info_classif
+import random
+from fitness_functions import mutual_information_eval, load_and_preprocess_data
+
+
+# Function to calculate mutual information for a subset of features
+
+
+def genetic_algorithm(X, y, fitness_function=mutual_information_eval, population_size=20, generations=100, mutation_rate=0.1, crossover_rate=0.8):
+    n_features = X.shape[1]
+
+    # Initialize a random population of individuals (feature subsets)
+    population = [np.random.choice([0, 1], size=n_features) for _ in range(population_size)]
+
+    best_solution = None
+    best_fitness = -float('inf')
+
+    for generation in range(generations):
+        # Evaluate the fitness of each individual in the population
+        fitness_scores = []
+        for individual in population:
+            fitness = fitness_function(individual, X, y)
+            fitness_scores.append(fitness)
+
+            # Update the best solution found
+            if fitness > best_fitness:
+                best_fitness = fitness
+                best_solution = individual.copy()
+
+        # Selection: Select individuals based on their fitness (roulette wheel selection)
+        fitness_sum = sum(fitness_scores)
+        if fitness_sum == 0:
+            probabilities = [1 / len(fitness_scores)] * len(fitness_scores)
+        else:
+            probabilities = [fitness / fitness_sum for fitness in fitness_scores]
+
+        selected_population = random.choices(population, weights=probabilities, k=population_size)
+
+        # Crossover: Create new population using crossover
+        new_population = []
+        for i in range(0, population_size, 2):
+            parent1 = selected_population[i]
+            parent2 = selected_population[i + 1] if i + 1 < population_size else selected_population[0]
+
+            if random.random() < crossover_rate:
+                # Perform crossover (single-point crossover)
+                crossover_point = random.randint(1, n_features - 1)
+                child1 = np.concatenate((parent1[:crossover_point], parent2[crossover_point:]))
+                child2 = np.concatenate((parent2[:crossover_point], parent1[crossover_point:]))
+            else:
+                child1, child2 = parent1.copy(), parent2.copy()
+
+            new_population.append(child1)
+            new_population.append(child2)
+
+        # Mutation: Mutate the new population
+        for individual in new_population:
+            for feature in range(n_features):
+                if random.random() < mutation_rate:
+                    individual[feature] = 1 - individual[feature]  # Flip the feature
+
+        # Replace the old population with the new population
+        population = new_population
+
+        # Optional: Print progress every 10 generations
+        if generation % 10 == 0:
+            print(f"Generation {generation}, Best Fitness: {best_fitness}")
+
+    return best_solution, best_fitness
+
+if __name__ == "__main__":
+    X, y = load_and_preprocess_data()
+    best_solution, best_fitness = genetic_algorithm(X, y, generations=5)
+    print(f"Best solution found:\n{best_solution}\nWith fitness: {best_fitness:.4f}")
+    # Print solution length
+    print(f"Solution Length: {np.sum(best_solution)}")
+    selected_features = X.columns[best_solution.astype(bool)].tolist()
+    print(f"Selected Features: {selected_features}")
+
+
+
+
