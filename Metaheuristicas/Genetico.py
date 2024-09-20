@@ -7,11 +7,12 @@ from fitness_functions import mutual_information_eval, load_and_preprocess_data
 # Function to calculate mutual information for a subset of features
 
 
-def genetic_algorithm(X, y, fitness_function=mutual_information_eval, population_size=20, generations=100, mutation_rate=0.1, crossover_rate=0.8):
+def genetic_algorithm(X, y, fitness_function=mutual_information_eval, population_size=84, generations=100, mutation_rate=0.1, crossover_rate=0.8):
     n_features = X.shape[1]
 
     # Initialize a random population of individuals (feature subsets)
     population = [np.random.choice([0, 1], size=n_features) for _ in range(population_size)]
+    print(f"Initial population:\n{len(population)}\n")
 
     best_solution = None
     best_fitness = -float('inf')
@@ -44,7 +45,7 @@ def genetic_algorithm(X, y, fitness_function=mutual_information_eval, population
             parent2 = selected_population[i + 1] if i + 1 < population_size else selected_population[0]
 
             if random.random() < crossover_rate:
-                # Perform crossover (single-point crossover)
+                # Perform crossover (single-point crossover) while maintaining feature vector length
                 crossover_point = random.randint(1, n_features - 1)
                 child1 = np.concatenate((parent1[:crossover_point], parent2[crossover_point:]))
                 child2 = np.concatenate((parent2[:crossover_point], parent1[crossover_point:]))
@@ -54,15 +55,17 @@ def genetic_algorithm(X, y, fitness_function=mutual_information_eval, population
             new_population.append(child1)
             new_population.append(child2)
 
-        # Mutation: Mutate the new population
+        # Mutation: Mutate the new population without modifying the length
         for individual in new_population:
             for feature in range(n_features):
                 if random.random() < mutation_rate:
-                    individual[feature] = 1 - individual[feature]  # Flip the feature
+                    # Flip the bit for feature selection (1 becomes 0, 0 becomes 1)
+                    individual[feature] = 1 - individual[feature]  # Flip the feature bit
 
         # Replace the old population with the new population
         population = new_population
-
+        print("hola")
+        print("Binary array length: ", len(population[0]))
         # Optional: Print progress every 10 generations
         if generation % 10 == 0:
             print(f"Generation {generation}, Best Fitness: {best_fitness}")

@@ -1,100 +1,81 @@
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import mutual_info_score
+
+from Metaheuristicas.fitness_functions import load_and_preprocess_data
 
 
-class ACO:
-    def __init__(self, n_ants, n_iterations, alpha=1, beta=2, evaporation_rate=0.5, q=1):
-        self.n_ants = n_ants
-        self.n_iterations = n_iterations
-        self.alpha = alpha  # Influence of pheromone
-        self.beta = beta  # Influence of heuristic information
-        self.evaporation_rate = evaporation_rate
-        self.q = q  # Amount of pheromone deposited by the best ant
-
-    def _initialize_pheromones(self, n_features):
-        """Initialize the pheromone matrix."""
-        return np.ones(n_features)
+class AntColonyOptimization:
+    def __init__(self, n_ants, n_best, n_iterations, decay, alpha=1, beta=1):
+        self.n_ants = n_ants  # Number of ants
+        self.n_best = n_best  # Number of top solutions to use for pheromone update
+        self.n_iterations = n_iterations  # Number of iterations
+        self.decay = decay  # Pheromone decay rate
+        self.alpha = alpha  # Pheromone importance
+        self.beta = beta  # Heuristic importance
 
     def _heuristic_information(self, X, y, feature_idx):
-        """Heuristic information, typically related to feature importance or relevance."""
-        return np.var(X[:, feature_idx])  # Variance of the feature as an example
+        # Use variance as a heuristic for example (can be replaced with other metrics)
+        return np.var(X[:, feature_idx])
 
-    def _construct_solution(self, pheromones, heuristic_info, n_features):
-        """Construct a feature subset based on pheromone and heuristic information."""
-        probabilities = np.zeros(n_features)
-        for i in range(n_features):
-            probabilities[i] = (pheromones[i] ** self.alpha) * (heuristic_info[i] ** self.beta)
-        probabilities /= probabilities.sum()
-        selected_features = np.random.choice(np.arange(n_features), size=int(n_features / 2), p=probabilities,
-                                             replace=False)
-        return selected_features
-
-    def _update_pheromones(self, pheromones, ant_solutions, fitness_values, best_solution, best_fitness):
-        """Update the pheromones for each feature based on ant solutions and their fitness."""
-        pheromones *= (1 - self.evaporation_rate)  # Evaporation
-        for i in range(len(ant_solutions)):
-            for feature in ant_solutions[i]:
-                pheromones[feature] += fitness_values[i] / best_fitness
-        for feature in best_solution:
-            pheromones[feature] += self.q  # Best solution reinforcement
+    def _initialize_pheromone(self, n_features):
+        # Initialize pheromone levels (same for all features)
+        return np.ones(n_features)
 
     def fit(self, X, y, fitness_function):
-        """Run the ACO optimization for feature selection."""
         n_features = X.shape[1]
-        pheromones = self._initialize_pheromones(n_features)
-        best_solution = None
-        best_fitness = -np.inf
+        pheromone = self._initialize_pheromone(n_features)
+
+        best_solutions = []
+        best_fitness_values = []
 
         for iteration in range(self.n_iterations):
-            ant_solutions = []
-            fitness_values = []
+            print(f"Iteration {iteration + 1}/{self.n_iterations}")
 
-            # Heuristic information (e.g., feature relevance)
-            heuristic_info = np.array([self._heuristic_information(X, y, i) for i in range(n_features)])
+            # Ants construct solutions (feature subsets)
+            solutions = []
+            for ant in range(self.n_ants):
+                # Each ant probabilistically selects features
+                probabilities = pheromone ** self.alpha * np.array(
+                    [self._heuristic_information(X, y, i) for i in range(n_features)]) ** self.beta
+                probabilities /= np.sum(probabilities)  # Normalize probabilities
 
-            for _ in range(self.n_ants):
-                # Construct a solution (feature subset)
-                selected_features = self._construct_solution(pheromones, heuristic_info, n_features)
-                ant_solutions.append(selected_features)
+                selected_features = np.random.rand(n_features) < probabilities  # Binary feature selection
+                solutions.append(selected_features)
 
-                # Evaluate the fitness of the feature subset using the given fitness function
-                X_selected = X[:, selected_features]
-                fitness = fitness_function(X_selected, y)
-                fitness_values.append(fitness)
+            # Evaluate solutions
+            fitness_values = [fitness_function(sol, X, y) for sol in solutions]
+            best_ants = np.argsort(fitness_values)[-self.n_best:]  # Top 'n_best' solutions
 
-                # Update the best solution found
-                if fitness > best_fitness:
-                    best_fitness = fitness
-                    best_solution = selected_features
+            # Update pheromones based on best solutions
+            for i in range(n_features):
+                pheromone[i] *= (1 - self.decay)  # Decay pheromones over time
 
-            # Update pheromones based on ant solutions
-            self._update_pheromones(pheromones, ant_solutions, fitness_values, best_solution, best_fitness)
-            print(f"Iteration {iteration + 1}/{self.n_iterations}, Best Fitness: {best_fitness}")
+                # Increase pheromone for good features
+                for best_ant in best_ants:
+                    if solutions[best_ant][i] == 1:
+                        pheromone[i] += 1.0 / (1 + fitness_values[best_ant])
 
-        return best_solution, best_fitness
+            best_solution_idx = np.argmax(fitness_values)
+            best_solutions.append(solutions[best_solution_idx])
+            best_fitness_values.append(fitness_values[best_solution_idx])
+            print(f"Best fitness of iteration {iteration + 1}: {fitness_values[best_solution_idx]:.4f}")
 
-
-# Fitness function for feature subset (e.g., accuracy with Random Forest)
-def fitness_function(X, y):
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-    clf = RandomForestClassifier(n_estimators=50)
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
-    return accuracy_score(y_test, y_pred)
+        # Return best solution across all iterations
+        best_overall_idx = np.argmax(best_fitness_values)
+        return best_solutions[best_overall_idx], best_fitness_values[best_overall_idx]
 
 
-# Example usage with a dataset
-# if __name__ == "__main__":
-#     from sklearn.datasets import load_iris
-#
-#     data = load_iris()
-#     X, y = data.data, data.target
-#
-#     # ACO parameters
-#     aco = ACO(n_ants=10, n_iterations=20)
-#     best_solution, best_fitness = aco.fit(X, y, fitness_function)
-#
-#     print("Best Solution (Selected Features):", best_solution)
-#     print("Best Fitness (Accuracy):", best_fitness)
+# Example usage
+def mutual_information_eval(selected_features, data, labels):
+    selected_data = data[:, selected_features == 1]
+    if selected_data.shape[1] == 0:
+        return -np.inf
+    return np.sum([mutual_info_score(selected_data[:, i], labels) for i in range(selected_data.shape[1])])
+
+# Assuming X and y are already defined
+aco = AntColonyOptimization(n_ants=10, n_best=5, n_iterations=20, decay=0.1, alpha=1, beta=2)
+X,y = load_and_preprocess_data()
+best_solution, best_fitness = aco.fit(X.values, y.values, fitness_function=mutual_information_eval)
+
+print(f"Best solution: {best_solution}")
+print(f"Best fitness: {best_fitness}")
