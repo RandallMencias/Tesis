@@ -51,11 +51,10 @@ def cuckoo_search(n, dim, iter_max, data, labels, pa=0.25, fitness_function=mutu
 
     # Calculate the initial fitness of all nests using mutual information
     fitness = np.array([fitness_function(nest.astype(int), data, labels) for nest in nests])
-    print(f"Initial fitness values:\n{fitness}\n")
 
     # Main loop: iterate for 'iter_max' iterations
     for t in range(iter_max):
-        print(f"Iteración {t + 1}/{iter_max}")  # Display current iteration number
+        # print(f"Iteración {t + 1}/{iter_max}")  # Display current iteration number
 
         # For each nest, perform the Cuckoo Search process
         for i in range(n):
@@ -65,7 +64,7 @@ def cuckoo_search(n, dim, iter_max, data, labels, pa=0.25, fitness_function=mutu
 
             # Evaluate the fitness of the newly generated nest
             new_fitness = fitness_function(new_nest, data, labels)
-            print(f"  Nido {i + 1} fitness: {fitness[i]:.4f} -> {new_fitness:.4f}")
+            # print(f"  Nido {i + 1} fitness: {fitness[i]:.4f} -> {new_fitness:.4f}")
             # Select a random different nest to compare the new solution against
             random_nest_index = np.random.choice([j for j in range(n) if j != i])
 
@@ -73,7 +72,7 @@ def cuckoo_search(n, dim, iter_max, data, labels, pa=0.25, fitness_function=mutu
             if new_fitness > fitness[random_nest_index]:
                 nests[random_nest_index] = new_nest  # Replace the random nest with the new one
                 fitness[random_nest_index] = new_fitness  # Update fitness of the replaced nest
-                print(f"  Nido {random_nest_index + 1} mejorado a fitness {new_fitness:.4f}")
+                # print(f"  Nido {random_nest_index + 1} mejorado a fitness {new_fitness:.4f}")
 
         # Abandon a fraction 'pa' of the worst nests and replace them with new random nests
         n_abandon = int(n * pa)  # Calculate the number of nests to abandon
@@ -84,11 +83,11 @@ def cuckoo_search(n, dim, iter_max, data, labels, pa=0.25, fitness_function=mutu
         fitness[worst_nests_indices] = np.array(
             [fitness_function(nest.astype(int), data, labels) for nest in nests[worst_nests_indices]]
         )
-        print(f"  {n_abandon} peores nidos abandonados y reemplazados por nuevos nidos.")
+        # print(f"  {n_abandon} peores nidos abandonados y reemplazados por nuevos nidos.")
 
         # Display the best fitness found at the end of this iteration
         best_fitness = np.max(fitness)
-        print(f"Mejor fitness al final de la iteración {t + 1}: {best_fitness:.4f}\n")
+        # print(f"Mejor fitness al final de la iteración {t + 1}: {best_fitness:.4f}\n")
 
     # After all iterations, find the best solution (nest) with the highest fitness
     best_idx = np.argmax(fitness)  # Index of the best nest
@@ -201,7 +200,7 @@ def cuckoo_search(n, dim, iter_max, data, labels, pa=0.25, fitness_function=mutu
 if __name__ == "__main__":
     X, y = load_and_preprocess_data()
 
-    nests, fitness_scores, best_nest, best_fitness = cuckoo_search(20, 84, 5, X, y, fitness_function= relieff_eval)
+    nests, fitness_scores, best_nest, best_fitness = cuckoo_search(20, 84, 5, X, y)
     sorted_indices = np.argsort(fitness_scores)[::-1]
     nests_sorted = nests[sorted_indices]
     fitness_scores_sorted = fitness_scores[sorted_indices]

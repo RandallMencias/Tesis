@@ -69,6 +69,7 @@ def genetic_algorithm(X, y, fitness_function=mutual_information_eval, population
         # Optional: Print progress every 10 generations
         if generation % 10 == 0:
             print(f"Generation {generation}, Best Fitness: {best_fitness}")
+            print(f"Best solution (Selected Features): {best_solution}")
 
     return best_solution, best_fitness
 

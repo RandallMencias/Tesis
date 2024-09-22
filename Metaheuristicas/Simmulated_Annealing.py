@@ -65,6 +65,7 @@ def simulated_annealing(X, y, fitness_function, initial_temperature=1000, coolin
         # Optional: Print progress every 100 iterations
         if i % 100 == 0:
             print(f"Iteration {i}, Current Score: {current_score}, Best Score: {best_score}")
+            print(f"Best solution (Selected Features): {best_solution}")
 
     return best_solution, best_score
 

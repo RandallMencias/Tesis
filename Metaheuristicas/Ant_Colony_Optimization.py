@@ -58,10 +58,11 @@ class AntColonyOptimization:
             best_solution_idx = np.argmax(fitness_values)
             best_solutions.append(solutions[best_solution_idx])
             best_fitness_values.append(fitness_values[best_solution_idx])
-            print(f"Best fitness of iteration {iteration + 1}: {fitness_values[best_solution_idx]:.4f}")
 
         # Return best solution across all iterations
         best_overall_idx = np.argmax(best_fitness_values)
+        # print(f"Best solution (Selected Features): {best_solutions}")
+
         return best_solutions[best_overall_idx], best_fitness_values[best_overall_idx]
 
 
