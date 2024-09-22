@@ -32,33 +32,50 @@ def relieff_eval(solution, data, labels, n_neighbors=10):
     Returns:
     - relieff_score: The average ReliefF score for the selected features.
     """
-    selected_features = data.iloc[:, solution.astype(bool)]
+    # Select features based on the solution
+    selected_features = data.iloc[:, solution.astype(bool)].to_numpy()
+    labels = labels.to_numpy()
+
     n_samples, n_features = selected_features.shape
+
+    # Fit the nearest neighbors model
+    nn = NearestNeighbors(n_neighbors=n_neighbors + 1).fit(selected_features)
+
+    # Find nearest neighbors for all samples at once
+    distances, indices = nn.kneighbors(selected_features)
 
     # Initialize the score array
     scores = np.zeros(n_features)
 
-    # Fit the nearest neighbors model
-    nn = NearestNeighbors(n_neighbors=n_neighbors + 1)
-    nn.fit(selected_features)
-
+    # Efficiently compute differences
     for i in range(n_samples):
-        # Find the nearest neighbors
-        distances, indices = nn.kneighbors(selected_features.iloc[i, :].values.reshape(1, -1), return_distance=True)
-        indices = indices[0][1:]  # Exclude the first neighbor (itself)
+        # Neighbors for the current sample (excluding the sample itself)
+        neighbors = indices[i, 1:]
 
-        # Calculate the score for each feature
-        for j in range(n_features):
-            diff_same_class = 0
-            diff_diff_class = 0
-            for idx in indices:
-                if labels[i] == labels[idx]:
-                    diff_same_class += np.abs(selected_features.iloc[i, j] - selected_features.iloc[idx, j])
-                else:
-                    diff_diff_class += np.abs(selected_features.iloc[i, j] - selected_features.iloc[idx, j])
-            scores[j] += diff_diff_class - diff_same_class
+        # Boolean mask for same-class and different-class neighbors
+        same_class_mask = labels[i] == labels[neighbors]
+        diff_class_mask = ~same_class_mask
 
-    # Normalize the scores
+        # Get the neighbors' features
+        current_sample = selected_features[i, :]
+        same_class_neighbors = selected_features[neighbors[same_class_mask], :]
+        diff_class_neighbors = selected_features[neighbors[diff_class_mask], :]
+
+        # Compute feature differences for both classes
+        if same_class_neighbors.shape[0] > 0:
+            diff_same_class = np.abs(current_sample - same_class_neighbors).sum(axis=0)
+        else:
+            diff_same_class = np.zeros(n_features)
+
+        if diff_class_neighbors.shape[0] > 0:
+            diff_diff_class = np.abs(current_sample - diff_class_neighbors).sum(axis=0)
+        else:
+            diff_diff_class = np.zeros(n_features)
+
+        # Update scores
+        scores += (diff_diff_class - diff_same_class)
+
+    # Average the scores over the number of samples
     relieff_score = np.mean(scores / n_samples)
     return relieff_score
 

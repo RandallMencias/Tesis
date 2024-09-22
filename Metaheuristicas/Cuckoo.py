@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import label_binarize
 from sklearn.multiclass import OneVsRestClassifier
-from fitness_functions import mutual_information_eval
+from fitness_functions import mutual_information_eval, relieff_eval, chi2_eval
 from fitness_functions import load_and_preprocess_data
 
 # Función para cargar y preprocesar los datos
@@ -65,7 +65,7 @@ def cuckoo_search(n, dim, iter_max, data, labels, pa=0.25, fitness_function=mutu
 
             # Evaluate the fitness of the newly generated nest
             new_fitness = fitness_function(new_nest, data, labels)
-
+            print(f"  Nido {i + 1} fitness: {fitness[i]:.4f} -> {new_fitness:.4f}")
             # Select a random different nest to compare the new solution against
             random_nest_index = np.random.choice([j for j in range(n) if j != i])
 
@@ -201,7 +201,7 @@ def cuckoo_search(n, dim, iter_max, data, labels, pa=0.25, fitness_function=mutu
 if __name__ == "__main__":
     X, y = load_and_preprocess_data()
 
-    nests, fitness_scores, best_nest, best_fitness = cuckoo_search(20, 84, 5, X, y)
+    nests, fitness_scores, best_nest, best_fitness = cuckoo_search(20, 84, 5, X, y, fitness_function= relieff_eval)
     sorted_indices = np.argsort(fitness_scores)[::-1]
     nests_sorted = nests[sorted_indices]
     fitness_scores_sorted = fitness_scores[sorted_indices]
