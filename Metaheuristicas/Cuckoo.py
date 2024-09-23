@@ -14,24 +14,6 @@ from sklearn.multiclass import OneVsRestClassifier
 from fitness_functions import mutual_information_eval, relieff_eval, chi2_eval
 from fitness_functions import load_and_preprocess_data
 
-# Función para cargar y preprocesar los datos
-# def load_and_preprocess_data(filepath):
-#     data = pd.read_excel(filepath)
-#     data.dropna(inplace=True)
-#     data.drop(columns=['espectrograma etiqueta'], inplace=True)  # Eliminar columna no relevante
-#
-#     label_encoder = LabelEncoder()
-#     data['Etiqueta'] = label_encoder.fit_transform(data['Etiqueta'])
-#
-#     X = data.iloc[:, :-1]
-#     y = data['Etiqueta']
-#
-#     scaler = MinMaxScaler()
-#     X_scaled = scaler.fit_transform(X)
-#
-#     return pd.DataFrame(X_scaled, columns=X.columns), y
-
-# Función para calcular la información mutua
 
 
 # Función para realizar vuelos de Levy
@@ -93,7 +75,7 @@ def cuckoo_search(n, dim, iter_max, data, labels, pa=0.25, fitness_function=mutu
     best_idx = np.argmax(fitness)  # Index of the best nest
     best_nest = nests[best_idx]  # The best nest (binary feature selection vector)
     best_fitness = fitness[best_idx]  # The best fitness value
-    print(f"Mejor nido encontrado:\n{best_nest}\nCon un fitness de: {best_fitness:.4f}")
+    # print(f"Mejor nido encontrado:\n{best_nest}\nCon un fitness de: {best_fitness:.4f}")
 
     # Return the final set of nests, their fitness values, and the best solution
     return nests, fitness, best_nest, best_fitness
@@ -200,17 +182,15 @@ def cuckoo_search(n, dim, iter_max, data, labels, pa=0.25, fitness_function=mutu
 if __name__ == "__main__":
     X, y = load_and_preprocess_data()
 
-    nests, fitness_scores, best_nest, best_fitness = cuckoo_search(20, 84, 5, X, y)
+    nests, fitness_scores, best_nest, best_fitness = cuckoo_search(10, 84, 3, X, y, fitness_function=relieff_eval)
     sorted_indices = np.argsort(fitness_scores)[::-1]
     nests_sorted = nests[sorted_indices]
     fitness_scores_sorted = fitness_scores[sorted_indices]
-#print the selected features
-    print("Top 5 subsets:")
-    for i in range(5):
-        selected_features_indices = np.where(nests_sorted[i])[0]
-        selected_features = X.columns[selected_features_indices].tolist()
-        print(f"Subset {i+1}: {selected_features}")
-        #print how many features are selected
-        print(f"Subset Length {i+1}: {len(selected_features)}")
-        print(f"Fitness: {fitness_scores_sorted[i]:.9f}")
-        print()
+#print the best nest features
+    print("Best nest features names: ")
+    print(X.columns[best_nest.astype(bool)].tolist())
+
+    print("Best fitness score: ")
+    print(fitness_scores_sorted[0])
+
+

@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.metrics import mutual_info_score
 
-from Metaheuristicas.fitness_functions import load_and_preprocess_data
+from Metaheuristicas.fitness_functions import load_and_preprocess_data, mutual_information_eval, chi2_eval, relieff_eval
 
 
 class AntColonyOptimization:
@@ -21,7 +21,7 @@ class AntColonyOptimization:
         # Initialize pheromone levels (same for all features)
         return np.ones(n_features)
 
-    def fit(self, X, y, fitness_function):
+    def fit(self, X, y, fitness_function = mutual_information_eval):
         n_features = X.shape[1]
         pheromone = self._initialize_pheromone(n_features)
 
@@ -29,7 +29,7 @@ class AntColonyOptimization:
         best_fitness_values = []
 
         for iteration in range(self.n_iterations):
-            print(f"Iteration {iteration + 1}/{self.n_iterations}")
+            # print(f"Iteration {iteration + 1}/{self.n_iterations}")
 
             # Ants construct solutions (feature subsets)
             solutions = []
@@ -61,22 +61,25 @@ class AntColonyOptimization:
 
         # Return best solution across all iterations
         best_overall_idx = np.argmax(best_fitness_values)
-        # print(f"Best solution (Selected Features): {best_solutions}")
-
         return best_solutions[best_overall_idx], best_fitness_values[best_overall_idx]
 
 
+
 # Example usage
-def mutual_information_eval(selected_features, data, labels):
-    selected_data = data[:, selected_features == 1]
-    if selected_data.shape[1] == 0:
-        return -np.inf
-    return np.sum([mutual_info_score(selected_data[:, i], labels) for i in range(selected_data.shape[1])])
+# def mutual_information_eval(selected_features, data, labels):
+#     selected_data = data[:, selected_features == 1]
+#     if selected_data.shape[1] == 0:
+#         return -np.inf
+#     return np.sum([mutual_info_score(selected_data[:, i], labels) for i in range(selected_data.shape[1])])
 
 # Assuming X and y are already defined
-aco = AntColonyOptimization(n_ants=10, n_best=5, n_iterations=20, decay=0.1, alpha=1, beta=2)
+aco = AntColonyOptimization(n_ants=20, n_best=10, n_iterations=20, decay=0.1, alpha=1, beta=2)
 X,y = load_and_preprocess_data()
-best_solution, best_fitness = aco.fit(X.values, y.values, fitness_function=mutual_information_eval)
+best_solution, best_fitness = aco.fit(X.values, y.values, fitness_function=relieff_eval)
 
-print(f"Best solution: {best_solution}")
+# print(f"Best solution: {best_solution}")
+bf = X.columns[best_solution == 1]
+
+print(f"Best Features names: {bf}")
+print(f"Best solution length: {len(best_solution)}")
 print(f"Best fitness: {best_fitness}")

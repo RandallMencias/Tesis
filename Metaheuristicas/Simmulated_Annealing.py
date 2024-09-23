@@ -2,10 +2,10 @@ from random import random, randint
 
 import numpy as np
 
-from Metaheuristicas.fitness_functions import mutual_information_eval, load_and_preprocess_data
+from Metaheuristicas.fitness_functions import mutual_information_eval, load_and_preprocess_data, chi2_eval, relieff_eval
 
 
-def simulated_annealing(X, y, fitness_function, initial_temperature=1000, cooling_rate=0.95, max_iter=1000):
+def simulated_annealing(X, y, initial_temperature=1000, cooling_rate=0.95, max_iter=1000, fitness_function=mutual_information_eval):
     """
     Perform simulated annealing to select the best subset of features using a given fitness function.
 
@@ -63,9 +63,9 @@ def simulated_annealing(X, y, fitness_function, initial_temperature=1000, coolin
         temperature *= cooling_rate
 
         # Optional: Print progress every 100 iterations
-        if i % 100 == 0:
-            print(f"Iteration {i}, Current Score: {current_score}, Best Score: {best_score}")
-            print(f"Best solution (Selected Features): {best_solution}")
+        # if i % 100 == 0:
+        #     print(f"Iteration {i}, Current Score: {current_score}, Best Score: {best_score}")
+        #     print(f"Best solution (Selected Features): {best_solution}")
 
     return best_solution, best_score
 
@@ -75,16 +75,16 @@ def main():
     X, y = load_and_preprocess_data()
 
     # Define the fitness function to be used
-    fitness_function = mutual_information_eval  # or chi2_eval, relieff_eval
+    fitness_function = relieff_eval  # or chi2_eval, relieff_eval
 
     # Run Simulated Annealing
-    best_solution, best_score = simulated_annealing(
-        X, y, fitness_function,
-        initial_temperature=1000, cooling_rate=0.95, max_iter=1000
-    )
+    best_solution, best_score = simulated_annealing( X, y,initial_temperature=1000, cooling_rate=0.95, max_iter=300, fitness_function=fitness_function)
 
-    print("Best Solution (Selected Features):", np.where(best_solution == 1)[0])
+    # Display the results
+    selected_features = X.columns[best_solution.astype(bool)].tolist()
+    print(f"Selected Features: {selected_features}")
     print("Best Score:", best_score)
+    print("Number of Selected Features:", np.sum(best_solution))
 
 if __name__ == "__main__":
     main()

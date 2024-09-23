@@ -8,15 +8,28 @@ from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 
 
 def mutual_information_eval(solution, data, labels):
-    mi_scores = mutual_info_classif(data.iloc[:, solution], labels)
-    mi_score = np.mean(mi_scores)
-    return mi_score
+    # Convert NumPy array back to DataFrame
+    data_df = pd.DataFrame(data)
+    selected_data = data_df.iloc[:, solution == 1]
+    if selected_data.shape[1] == 0:
+        return -np.inf
+    mi_scores = mutual_info_classif(selected_data, labels)
+    return np.sum(mi_scores)
 
 
 def chi2_eval(solution, data, labels):
-    chi2_scores = chi2(data.iloc[:, solution], labels)
-    chi2_score = np.mean(chi2_scores)
-    return chi2_score
+    # Convert NumPy array back to DataFrame
+    data_df = pd.DataFrame(data)
+    selected_data = data_df.iloc[:, solution == 1]
+    if selected_data.shape[1] == 0:
+        return -np.inf
+    chi2_scores, _ = chi2(selected_data, labels)
+    return np.mean(chi2_scores)
+
+
+import pandas as pd
+import numpy as np
+from sklearn.neighbors import NearestNeighbors
 
 
 def relieff_eval(solution, data, labels, n_neighbors=10):
@@ -32,11 +45,21 @@ def relieff_eval(solution, data, labels, n_neighbors=10):
     Returns:
     - relieff_score: The average ReliefF score for the selected features.
     """
+    # Ensure data is a DataFrame
+    if not isinstance(data, pd.DataFrame):
+        data = pd.DataFrame(data)
+
     # Select features based on the solution
     selected_features = data.iloc[:, solution.astype(bool)].to_numpy()
-    labels = labels.to_numpy()
+
+    # Check if any features are selected
+    if selected_features.shape[1] == 0:
+        return -np.inf
 
     n_samples, n_features = selected_features.shape
+
+    # Convert labels to NumPy array
+    labels = np.array(labels)
 
     # Fit the nearest neighbors model
     nn = NearestNeighbors(n_neighbors=n_neighbors + 1).fit(selected_features)
@@ -78,9 +101,9 @@ def relieff_eval(solution, data, labels, n_neighbors=10):
     # Average the scores over the number of samples
     relieff_score = np.mean(scores / n_samples)
     return relieff_score
+def load_and_preprocess_data(filename ='Resources/SeisBenchV1_v1_1.json'):
 
-def load_and_preprocess_data():
-    with open('Resources/SeisBenchV1_v1_1.json') as file:
+    with open(filename) as file:
         data = json.load(file)
         data = pd.DataFrame(data)
         data.dropna(inplace=True)
@@ -99,5 +122,8 @@ def load_and_preprocess_data():
     X_scaled = scaler.fit_transform(X)
 
     return pd.DataFrame(X_scaled, columns=X.columns), y
+
+
+
 
 

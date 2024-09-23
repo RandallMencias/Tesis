@@ -7,12 +7,12 @@ from fitness_functions import mutual_information_eval, load_and_preprocess_data
 # Function to calculate mutual information for a subset of features
 
 
-def genetic_algorithm(X, y, fitness_function=mutual_information_eval, population_size=84, generations=100, mutation_rate=0.1, crossover_rate=0.8):
+def genetic_algorithm(X, y, population_size=84, generations=100, mutation_rate=0.1, crossover_rate=0.8,  fitness_function=mutual_information_eval):
     n_features = X.shape[1]
 
     # Initialize a random population of individuals (feature subsets)
     population = [np.random.choice([0, 1], size=n_features) for _ in range(population_size)]
-    print(f"Initial population:\n{len(population)}\n")
+    # print(f"Initial population:\n{len(population)}\n")
 
     best_solution = None
     best_fitness = -float('inf')
@@ -64,23 +64,23 @@ def genetic_algorithm(X, y, fitness_function=mutual_information_eval, population
 
         # Replace the old population with the new population
         population = new_population
-        print("hola")
-        print("Binary array length: ", len(population[0]))
+        # print("Binary array length: ", len(population[0]))
         # Optional: Print progress every 10 generations
-        if generation % 10 == 0:
-            print(f"Generation {generation}, Best Fitness: {best_fitness}")
-            print(f"Best solution (Selected Features): {best_solution}")
+        # if generation % 10 == 0:
+        #     print(f"Generation {generation}, Best Fitness: {best_fitness}")
+        #     print(f"Best solution (Selected Features): {best_solution}")
 
     return best_solution, best_fitness
 
 if __name__ == "__main__":
     X, y = load_and_preprocess_data()
     best_solution, best_fitness = genetic_algorithm(X, y, generations=5)
-    print(f"Best solution found:\n{best_solution}\nWith fitness: {best_fitness:.4f}")
+
     # Print solution length
     print(f"Solution Length: {np.sum(best_solution)}")
     selected_features = X.columns[best_solution.astype(bool)].tolist()
     print(f"Selected Features: {selected_features}")
+    print(f"Best Fitness: {best_fitness}")
 
 
 
