@@ -7,13 +7,12 @@ from fitness_functions import mutual_information_eval, load_and_preprocess_data
 # Function to calculate mutual information for a subset of features
 
 
-def genetic_algorithm(X, y, population_size=84, generations=100, mutation_rate=0.1, crossover_rate=0.8,  fitness_function=mutual_information_eval):
+def genetic_algorithm(X, y, population_size=42, num_parents=28, generations=100, mutation_rate=0.1, crossover_rate=0.8, fitness_function=mutual_information_eval):
     n_features = X.shape[1]
 
     # Initialize a random population of individuals (feature subsets)
     population = [np.random.choice([0, 1], size=n_features) for _ in range(population_size)]
-    # print(f"Initial population:\n{len(population)}\n")
-
+    # population =population_size
     best_solution = None
     best_fitness = -float('inf')
 
@@ -36,13 +35,13 @@ def genetic_algorithm(X, y, population_size=84, generations=100, mutation_rate=0
         else:
             probabilities = [fitness / fitness_sum for fitness in fitness_scores]
 
-        selected_population = random.choices(population, weights=probabilities, k=population_size)
+        selected_population = random.choices(population, weights=probabilities, k=num_parents)
 
         # Crossover: Create new population using crossover
         new_population = []
         for i in range(0, population_size, 2):
-            parent1 = selected_population[i]
-            parent2 = selected_population[i + 1] if i + 1 < population_size else selected_population[0]
+            parent1 = selected_population[i % num_parents]
+            parent2 = selected_population[(i + 1) % num_parents]
 
             if random.random() < crossover_rate:
                 # Perform crossover (single-point crossover) while maintaining feature vector length
@@ -64,11 +63,6 @@ def genetic_algorithm(X, y, population_size=84, generations=100, mutation_rate=0
 
         # Replace the old population with the new population
         population = new_population
-        # print("Binary array length: ", len(population[0]))
-        # Optional: Print progress every 10 generations
-        # if generation % 10 == 0:
-        #     print(f"Generation {generation}, Best Fitness: {best_fitness}")
-        #     print(f"Best solution (Selected Features): {best_solution}")
 
     return best_solution, best_fitness
 
