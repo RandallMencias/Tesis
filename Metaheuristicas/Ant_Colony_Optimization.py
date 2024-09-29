@@ -2,9 +2,11 @@ import numpy as np
 from sklearn.metrics import mutual_info_score
 from Metaheuristicas.fitness_functions import load_and_preprocess_data, mutual_information_eval, chi2_eval, relieff_eval
 
+import warnings
+warnings.filterwarnings("ignore")
 
 class AdvancedBinaryAntColonyOptimization:
-    def __init__(self, n_ants, n_best, n_iterations, decay, alpha=1, beta=1, local_search_prob=0.1):
+    def __init__(self, n_ants, n_best, n_iterations, decay = 0.6, alpha=0.5, beta=2, local_search_prob=0.3, min_features=20):
         self.n_ants = n_ants  # Number of ants
         self.n_best = n_best  # Number of top solutions to use for pheromone update
         self.n_iterations = n_iterations  # Number of iterations
@@ -12,6 +14,9 @@ class AdvancedBinaryAntColonyOptimization:
         self.alpha = alpha  # Pheromone importance
         self.beta = beta  # Heuristic importance
         self.local_search_prob = local_search_prob  # Probability of performing local search
+        self.min_features = min_features  # Minimum number of features to select
+        self.feature_selection_log = []  # Log for selected features
+
 
     def _heuristic_information(self, X, y, feature_idx):
         """Use mutual information as a heuristic for feature importance."""
@@ -45,7 +50,6 @@ class AdvancedBinaryAntColonyOptimization:
         return pheromone
 
     def fit(self, X, y, fitness_function=mutual_information_eval):
-        """Main optimization loop."""
         n_features = X.shape[1]
         pheromone = self._initialize_pheromone(n_features)
 
@@ -53,37 +57,48 @@ class AdvancedBinaryAntColonyOptimization:
         best_global_fitness = -np.inf
 
         for iteration in range(self.n_iterations):
-            # Ants construct solutions (feature subsets)
             solutions = []
             fitness_values = []
             for ant in range(self.n_ants):
-                # Each ant probabilistically selects features based on pheromone and heuristic information
                 probabilities = pheromone ** self.alpha * np.array(
                     [self._heuristic_information(X, y, i) for i in range(n_features)]) ** self.beta
-                probabilities /= np.sum(probabilities)  # Normalize probabilities
+                probabilities /= np.sum(probabilities)
 
-                selected_features = np.random.rand(n_features) < probabilities  # Binary feature selection
-                solutions.append(selected_features)
+                selected_features = np.random.rand(n_features) < probabilities
 
-                # Evaluate solution
-                fitness = fitness_function(selected_features, X, y)
+                while np.sum(selected_features) < self.min_features:
+                    selected_features[np.random.randint(n_features)] = 1
 
-                # Perform local search with a probability
-                if np.random.rand() < self.local_search_prob:
-                    selected_features, fitness = self._local_search(selected_features, X, y, fitness_function)
+                # Check diversity before adding the solution
+                if len(solutions) == 0 or self._is_diverse(solutions + [selected_features]):
+                    solutions.append(selected_features)
 
-                fitness_values.append(fitness)
+                    fitness = fitness_function(selected_features, X, y)
 
-            # Update pheromones based on best solutions
+                    if np.random.rand() < self.local_search_prob:
+                        selected_features, fitness = self._local_search(selected_features, X, y, fitness_function)
+
+                    fitness_values.append(fitness)
+
+            # Ensure enough solutions were generated
+            while len(solutions) < self.n_ants:
+                additional_features = np.random.randint(2, size=n_features)  # Random solution
+                if self._is_diverse(solutions + [additional_features]):
+                    solutions.append(additional_features)
+                    fitness_values.append(fitness_function(additional_features, X, y))
+
             pheromone = self._update_pheromone(pheromone, solutions, fitness_values)
 
-            # Track the best solution globally
             best_solution_idx = np.argmax(fitness_values)
             if fitness_values[best_solution_idx] > best_global_fitness:
                 best_global_solution = solutions[best_solution_idx]
                 best_global_fitness = fitness_values[best_solution_idx]
+                print(
+                    f"Iteration {iteration + 1}/{self.n_iterations}: New best solution found with fitness {best_global_fitness}")
+            else:
+                print(f"Iteration {iteration + 1}/{self.n_iterations}: No new best solution found")
 
-            print(f"Iteration {iteration + 1}/{self.n_iterations}, Best fitness: {best_global_fitness}")
+            self.feature_selection_log.append(np.sum(solutions, axis=0))
 
         return best_global_solution, best_global_fitness
 
@@ -96,10 +111,10 @@ class AdvancedBinaryAntColonyOptimization:
 #     return np.sum([mutual_info_score(selected_data[:, i], labels) for i in range(selected_data.shape[1])])
 
 # Assuming X and y are already defined
-aco = AdvancedBinaryAntColonyOptimization(n_ants=20, n_best=10, n_iterations=20, decay=0.1, alpha=1, beta=2,
-                                          local_search_prob=0.1)
+aco = AdvancedBinaryAntColonyOptimization(n_ants=20, n_best=30, n_iterations=1000, decay=0.6, alpha=1, beta=2,
+                                          local_search_prob=0.15)
 X, y = load_and_preprocess_data()
-best_solution, best_fitness = aco.fit(X.values, y.values, fitness_function=relieff_eval)
+best_solution, best_fitness = aco.fit(X.values, y.values, fitness_function=chi2_eval)
 
 # Print results
 best_features = X.columns[best_solution == 1]
