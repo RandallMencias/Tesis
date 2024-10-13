@@ -6,7 +6,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 class AdvancedBinaryAntColonyOptimization:
-    def __init__(self, n_ants, n_best, n_iterations, decay = 0.6, alpha=0.5, beta=2, local_search_prob=0.3, min_features=20):
+    def __init__(self, n_ants, n_best, n_iterations, decay=0.6, alpha=0.5, beta=2, local_search_prob=0.3, min_features=20):
         self.n_ants = n_ants  # Number of ants
         self.n_best = n_best  # Number of top solutions to use for pheromone update
         self.n_iterations = n_iterations  # Number of iterations
@@ -48,6 +48,13 @@ class AdvancedBinaryAntColonyOptimization:
                     pheromone[i] += 1.0 / (1 + fitness_values[best_ant])
 
         return pheromone
+
+    def _is_diverse(self, solutions):
+        """Check if a new solution is diverse enough from the rest."""
+        if len(solutions) == 0:
+            return True
+        return np.mean([np.sum(solutions[-1] ^ solution) for solution in solutions]) > 0.5
+
 
     def fit(self, X, y, fitness_function=mutual_information_eval):
         n_features = X.shape[1]
@@ -93,14 +100,17 @@ class AdvancedBinaryAntColonyOptimization:
             if fitness_values[best_solution_idx] > best_global_fitness:
                 best_global_solution = solutions[best_solution_idx]
                 best_global_fitness = fitness_values[best_solution_idx]
-                print(
-                    f"Iteration {iteration + 1}/{self.n_iterations}: New best solution found with fitness {best_global_fitness}")
+                # print(f"Iteration {iteration + 1}/{self.n_iterations}: New best solution found with fitness {best_global_fitness}")
             else:
-                print(f"Iteration {iteration + 1}/{self.n_iterations}: No new best solution found")
+                pass
+
+                # print(f"Iteration {iteration + 1}/{self.n_iterations}: No new best solution found")
 
             self.feature_selection_log.append(np.sum(solutions, axis=0))
 
         return best_global_solution, best_global_fitness
+
+
 
 
 # Example usage
@@ -111,13 +121,15 @@ class AdvancedBinaryAntColonyOptimization:
 #     return np.sum([mutual_info_score(selected_data[:, i], labels) for i in range(selected_data.shape[1])])
 
 # Assuming X and y are already defined
-aco = AdvancedBinaryAntColonyOptimization(n_ants=20, n_best=30, n_iterations=1000, decay=0.6, alpha=1, beta=2,
-                                          local_search_prob=0.15)
-X, y = load_and_preprocess_data()
-best_solution, best_fitness = aco.fit(X.values, y.values, fitness_function=chi2_eval)
-
-# Print results
-best_features = X.columns[best_solution == 1]
-print(f"Best Features names: {best_features}")
-print(f"Best solution length: {len(best_solution)}")
-print(f"Best fitness: {best_fitness}")
+# def main():
+#     aco = AdvancedBinaryAntColonyOptimization(n_ants=20, n_best=1, n_iterations=10, decay=0.6, alpha=1, beta=2,
+#                                               local_search_prob=0.15)
+#     X, y = load_and_preprocess_data()
+#     best_solution, best_fitness = aco.fit(X.values, y.values, fitness_function=chi2_eval)
+#     # Print results
+#     best_features = X.columns[best_solution == 1]
+#     print(f"Best Features names: {best_features}")
+#     print(f"Best solution length: {len(best_solution)}")
+#     print(f"Best fitness: {best_fitness}")
+#
+# main()
