@@ -18,6 +18,7 @@ def genetic_algorithm(X, y, population_size=42, num_parents=28, generations=100,
     best_fitness = -float('inf')
 
     for generation in range(generations):
+        print(f"Generation {generation + 1}/{generations}")
         # Evaluate the fitness of each individual in the population
         fitness_scores = []
         for individual in population:
@@ -67,15 +68,15 @@ def genetic_algorithm(X, y, population_size=42, num_parents=28, generations=100,
 
     return best_solution, best_fitness
 
-if __name__ == "__main__":
-    X, y = load_and_preprocess_data()
-    best_solution, best_fitness = genetic_algorithm(X, y, generations=5)
-
-    # Print solution length
-    print(f"Solution Length: {np.sum(best_solution)}")
-    selected_features = X.columns[best_solution.astype(bool)].tolist()
-    print(f"Selected Features: {selected_features}")
-    print(f"Best Fitness: {best_fitness}")
+# if __name__ == "__main__":
+#     X, y = load_and_preprocess_data()
+#     best_solution, best_fitness = genetic_algorithm(X, y, generations=5)
+#
+#     # Print solution length
+#     print(f"Solution Length: {np.sum(best_solution)}")
+#     selected_features = X.columns[best_solution.astype(bool)].tolist()
+#     print(f"Selected Features: {selected_features}")
+#     print(f"Best Fitness: {best_fitness}")
 
 
 
