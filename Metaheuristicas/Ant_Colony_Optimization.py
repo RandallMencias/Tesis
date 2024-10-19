@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.metrics import mutual_info_score
-from Metaheuristicas.fitness_functions import load_and_preprocess_data, mutual_information_eval, chi2_eval, relieff_eval
+from Metaheuristicas.fitness_functions import mutual_information_eval
 
 import warnings
 warnings.filterwarnings("ignore")

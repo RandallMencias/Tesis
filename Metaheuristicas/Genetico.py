@@ -1,7 +1,8 @@
 import numpy as np
 from sklearn.feature_selection import mutual_info_classif
 import random
-from fitness_functions import mutual_information_eval, load_and_preprocess_data
+from Metaheuristicas.fitness_functions import mutual_information_eval, load_and_preprocess_data
+
 
 
 # Function to calculate mutual information for a subset of features

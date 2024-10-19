@@ -2,7 +2,8 @@ from random import random, randint
 
 import numpy as np
 
-from Metaheuristicas.fitness_functions import mutual_information_eval, load_and_preprocess_data, chi2_eval, relieff_eval
+from Metaheuristicas.fitness_functions import mutual_information_eval, load_and_preprocess_data, \
+    relieff_eval
 
 
 def simulated_annealing(X, y, initial_temperature=1000, cooling_rate=0.95, max_iter=1000, fitness_function=mutual_information_eval):

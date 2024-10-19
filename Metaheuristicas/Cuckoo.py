@@ -11,8 +11,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import label_binarize
 from sklearn.multiclass import OneVsRestClassifier
-from fitness_functions import mutual_information_eval, relieff_eval, chi2_eval
-from fitness_functions import load_and_preprocess_data
+from Metaheuristicas.fitness_functions import mutual_information_eval, relieff_eval, chi2_eval
+from Metaheuristicas.fitness_functions import load_and_preprocess_data
 
 
 
@@ -69,7 +69,7 @@ def cuckoo_search(n, dim, iter_max, data, labels, pa=0.25, fitness_function=mutu
 
         # Display the best fitness found at the end of this iteration
         best_fitness = np.max(fitness)
-        print(f"Mejor fitness al final de la iteración {t + 1}: {best_fitness:.4f}\n")
+        # print(f"Mejor fitness al final de la iteración {t + 1}: {best_fitness:.4f}\n")
 
     # After all iterations, find the best solution (nest) with the highest fitness
     best_idx = np.argmax(fitness)  # Index of the best nest

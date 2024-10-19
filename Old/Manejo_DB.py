@@ -2,7 +2,7 @@
 
 import json
 import pandas as pd
-with open('Metaheuristicas/Resources/SeisBenchV1_v1_1.json') as file:
+with open('../Resources/SeisBenchV1_v1_1.json') as file:
     data = json.load(file)
 
 #converty to pandas dataframe
