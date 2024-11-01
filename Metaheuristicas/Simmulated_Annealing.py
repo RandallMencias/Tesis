@@ -40,6 +40,11 @@ def simulated_annealing(X, y, initial_temperature=1000, cooling_rate=0.95, max_i
         flip_index = randint(0, n_features - 1)
         new_solution[flip_index] = 1 - new_solution[flip_index]  # Flip the feature (0 -> 1 or 1 -> 0)
 
+        # Check if the new solution meets the feature count constraint (10 < features < 60)
+        num_selected_features = np.sum(new_solution)
+        if num_selected_features < 20 or num_selected_features > 60:
+            continue  # Skip this iteration if the constraint is not met
+
         # Evaluate the new solution's fitness
         new_score = fitness_function(new_solution, X, y)
 
@@ -62,11 +67,6 @@ def simulated_annealing(X, y, initial_temperature=1000, cooling_rate=0.95, max_i
 
         # Decrease the temperature according to the cooling rate
         temperature *= cooling_rate
-
-        # Optional: Print progress every 100 iterations
-        # if i % 100 == 0:
-        #     print(f"Iteration {i}, Current Score: {current_score}, Best Score: {best_score}")
-        #     print(f"Best solution (Selected Features): {best_solution}")
 
     return best_solution, best_score
 
