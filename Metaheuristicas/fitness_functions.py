@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.feature_selection import mutual_info_classif, chi2
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from skrebate import ReliefF
 
 
 def mutual_information_eval(solution, data, labels):
@@ -38,7 +39,7 @@ def relieff_eval(solution, data, labels, n_neighbors=10):
 
     Parameters:
     - solution: Binary array indicating the selected features.
-    - data: Feature matrix.
+    - data: Feature matrix (DataFrame).
     - labels: Target variable.
     - n_neighbors: Number of neighbors to consider.
 
@@ -50,59 +51,35 @@ def relieff_eval(solution, data, labels, n_neighbors=10):
         data = pd.DataFrame(data)
 
     # Select features based on the solution
-    selected_features = data.iloc[:, solution.astype(bool)].to_numpy()
+    selected_features = data.iloc[:, solution.astype(bool)]
 
     # Check if any features are selected
     if selected_features.shape[1] == 0:
         return -np.inf
 
-    n_samples, n_features = selected_features.shape
-
-    # Convert labels to NumPy array
+    # Convert labels to NumPy array if needed
     labels = np.array(labels)
 
-    # Fit the nearest neighbors model
-    nn = NearestNeighbors(n_neighbors=n_neighbors + 1).fit(selected_features)
+    # Fit ReliefF on the selected features
+    relief = ReliefF(n_neighbors=n_neighbors)
+    relief.fit(selected_features.values, labels)
 
-    # Find nearest neighbors for all samples at once
-    distances, indices = nn.kneighbors(selected_features)
+    # Calculate the average score for selected features
+    relieff_score = relief.feature_importances_.mean()
 
-    # Initialize the score array
-    scores = np.zeros(n_features)
-
-    # Efficiently compute differences
-    for i in range(n_samples):
-        # Neighbors for the current sample (excluding the sample itself)
-        neighbors = indices[i, 1:]
-
-        # Boolean mask for same-class and different-class neighbors
-        same_class_mask = labels[i] == labels[neighbors]
-        diff_class_mask = ~same_class_mask
-
-        # Get the neighbors' features
-        current_sample = selected_features[i, :]
-        same_class_neighbors = selected_features[neighbors[same_class_mask], :]
-        diff_class_neighbors = selected_features[neighbors[diff_class_mask], :]
-
-        # Compute feature differences for both classes
-        if same_class_neighbors.shape[0] > 0:
-            diff_same_class = np.abs(current_sample - same_class_neighbors).sum(axis=0)
-        else:
-            diff_same_class = np.zeros(n_features)
-
-        if diff_class_neighbors.shape[0] > 0:
-            diff_diff_class = np.abs(current_sample - diff_class_neighbors).sum(axis=0)
-        else:
-            diff_diff_class = np.zeros(n_features)
-
-        # Update scores
-        scores += (diff_diff_class - diff_same_class)
-
-    # Average the scores over the number of samples
-    relieff_score = np.mean(scores / n_samples)
     return relieff_score
-def load_and_preprocess_data(filename ='Resources/SeisBenchV1_v1_1.json'):
 
+def load_and_preprocess_data(filename='Resources/SeisBenchV1_v1_1.json'):
+    """
+    Load and preprocess data from a JSON file.
+
+    Parameters:
+    - filename: Path to the JSON file.
+
+    Returns:
+    - X_scaled: Scaled feature matrix (DataFrame).
+    - y: Target variable.
+    """
     with open(filename) as file:
         data = json.load(file)
         data = pd.DataFrame(data)
