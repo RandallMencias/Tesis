@@ -34,37 +34,20 @@ from sklearn.neighbors import NearestNeighbors
 
 
 def relieff_eval(solution, data, labels, n_neighbors=10):
-    """
-    Evaluate the quality of a feature subset using the ReliefF algorithm.
 
-    Parameters:
-    - solution: Binary array indicating the selected features.
-    - data: Feature matrix (DataFrame).
-    - labels: Target variable.
-    - n_neighbors: Number of neighbors to consider.
-
-    Returns:
-    - relieff_score: The average ReliefF score for the selected features.
-    """
-    # Ensure data is a DataFrame
     if not isinstance(data, pd.DataFrame):
         data = pd.DataFrame(data)
 
-    # Select features based on the solution
     selected_features = data.iloc[:, solution.astype(bool)]
 
-    # Check if any features are selected
     if selected_features.shape[1] == 0:
         return -np.inf
 
-    # Convert labels to NumPy array if needed
     labels = np.array(labels)
 
-    # Fit ReliefF on the selected features
     relief = ReliefF(n_neighbors=n_neighbors)
     relief.fit(selected_features.values, labels)
 
-    # Calculate the average score for selected features
     relieff_score = relief.feature_importances_.mean()
 
     return relieff_score
